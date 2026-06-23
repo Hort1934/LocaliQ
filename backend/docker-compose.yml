@@ -5,25 +5,32 @@ services:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: producers_db
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-producers_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user} -d ${POSTGRES_DB:-producers_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   web:
     build: .
+    # --reload is development-only; the Dockerfile CMD starts without it
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - .:/code
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     depends_on:
-      - db
-    environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/producers_db
+      db:
+        condition: service_healthy
 
 volumes:
   postgres_data:
