@@ -1,3 +1,11 @@
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    """
+    Base class for all SQLAlchemy ORM models.
+
+    Uses the modern SQLAlchemy 2.x style (DeclarativeBase)
+    instead of the deprecated sqlalchemy.ext.declarative.declarative_base().
+    """
+    pass
