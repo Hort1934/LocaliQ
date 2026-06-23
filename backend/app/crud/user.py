@@ -1,21 +1,26 @@
 from sqlalchemy.orm import Session
-from passlib.context import CryptContext
+import bcrypt
 
 from app.models.user import User
 from app.schemas.user import UserCreate
 
-# Single source of truth for password hashing used across the application
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def get_password_hash(password: str) -> str:
     """Return bcrypt hash of the given plain-text password."""
-    return pwd_context.hash(password)
+    # Convert string to bytes, hash it, then decode back to a string for DB storage
+    pwd_bytes = password.encode('utf-8')
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(pwd_bytes, salt)
+    return hashed.decode('utf-8')
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plain-text password against its bcrypt hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    # checkpw expects both values to be in bytes
+    return bcrypt.checkpw(
+        plain_password.encode('utf-8'), 
+        hashed_password.encode('utf-8')
+    )
 
 
 def get_user_by_username(db: Session, username: str) -> User | None:
