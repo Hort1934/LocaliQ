@@ -63,23 +63,39 @@ const AddProducerPage = () => {
         .join(', '),
     };
 
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      alert('Ви не авторизовані. Будь ласка, увійдіть в систему.');
+      navigate('/login');
+      return;
+    }
+
     try {
       const res = await fetch('http://localhost:8000/api/producers/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
 
       if (res.ok) {
         alert(`Виробник "${form.name}" доданий!`);
         navigate('/');
+      } else if (res.status === 401) {
+        alert('Сесія закінчилась. Будь ласка, увійдіть знову.');
+        localStorage.removeItem('access_token');
+        navigate('/login');
       } else {
-        alert('Помилка при додаванні виробника');
+        const errorData = await res.json().catch(() => null);
+        alert(errorData?.detail || 'Помилка при додаванні виробника');
       }
     } catch {
       alert('Помилка мережі');
     }
   };
+
 
   const steps = [
     <StepBasicInfo form={form} onChange={handleChange} nextStep={() => setStep(step + 1)} key="step-1" />,
